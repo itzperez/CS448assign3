@@ -1,2 +1,2 @@
 d3.select('#wy')
-    .text('change text');
+    .text('d3 is working, yayyy');
