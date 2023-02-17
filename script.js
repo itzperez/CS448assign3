@@ -100,4 +100,47 @@ d3.csv("yelp.csv")
     yelp = shopData;
 });
 
+let circles = [];
+
+let drag = d3.drag()
+  .on('drag', handleDrag);
+
+function handleDrag(element) {
+  element.subject.x = element.x;
+  element.subject.y = element.y;
+  update();
+}
+
+function initDrag() {
+  d3.select('svg')
+    .selectAll('circle')
+    .call(drag);
+}
+
+function updateData() {
+  circles = [];
+  for(let i = 0; i < 2; i++) {
+    circles.push({
+      id: i,
+      x: Math.random() * 800,
+      y: Math.random() * 800
+    });
+  }
+}
+
+function update() {
+  d3.select('svg')
+    .selectAll('circle')
+    .data(circles)
+    .join('circle')
+    .attr('cx', function(d) { return d.x; })
+    .attr('cy', function(d) { return d.y; })
+    .attr('r', 30);
+
+  
+}
+
+updateData();
+update();
+initDrag();
 
