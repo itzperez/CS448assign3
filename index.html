@@ -53,14 +53,11 @@
 
 
     <script src='https://cdnjs.cloudflare.com/ajax/libs/d3/6.2.0/d3.min.js'></script>
+    <script type="text/javascript" src="yelp.json"></script> 
 
     <script >
-
-        d3.select('p')
-            .text('update');
-
-
-
+        
+        var yelpJSON = dataJSON;
         mapboxgl.accessToken = 'pk.eyJ1IjoiaXR6cGVyZXoiLCJhIjoiY2xlOWltdXFvMDlnNDNxbzl6OHZ6NTluZiJ9.5cksE822_kLgE2-Qjaf0YA';
         const map = new mapboxgl.Map({
             container: 'map', // container ID
@@ -89,29 +86,12 @@
             return map.project(new mapboxgl.LngLat(d[0], d[1]));
         }
 
-
-
-        // var dataBytes = [37.4292654112971, -122.173590660095];
-        var dummyData = [
-            {
-                name: 'T4',
-                reviews: 5,
-                coordinates: [-122.11938801965059, 37.418950548214895]
-            },
-            {
-                name: 'Teaspoon',
-                reviews: 3,
-                coordinates: [-122.14203970455065, 37.418950548214895]
-            },
-            
-        ]
-
         var dots = svg
             .selectAll("circle")
-            .data(dummyData)
+            .data(yelpJSON)
             .enter()
             .append("circle")
-            .attr("r", 5)
+            .attr("r", 3)
             .style("fill", "gray") //can add criteria here 
             .on("mouseover", function (event, d) {
                 svg.select("#tooltip-text")
@@ -163,34 +143,9 @@
         map.on("moveend", render);
         render(); 
 
-        // d3.csv("yelp.csv")
-        //     .then(function(shopData) {
-        //         let parsedData = []
-        //         shopData.map((elem) => {
-        //         let o = {}
-        //         o['name'] = elem.name;
-        //         o['rating'] = elem.rating;
-
-        //         let coordinateString = elem.coordinates;
-        //         coordinateString = coordinateString.split(',');
-        //         lngLat = []
-        //         for (let i = 1; i >= 0; i--) {
-        //             lngLat.push(+coordinateString[i]);
-    
-        //         }
-        //         o['coordinates'] = lngLat;
-
-        //         parsedData.push(o);
-        //         });
-        //         yelpData = parsedData;
-        //         console.log(yelpData);
-
-        // });
 
 
-        var yelpData;
-
-
+        
 
         // map.on('load', () => {
         //     // map.setFog({});
