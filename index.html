@@ -17,8 +17,8 @@
         #map {
             width: 100%;
             height: 100%;
-            flex-grow: 1;
             margin-right: 20px;
+            flex-grow: 1;
             z-index: 0;
             position: relative;
         }
@@ -32,20 +32,58 @@
             width: 30%;
             height: 100%;
             flex-shrink: 0;
-            background-color: pink;
+            background-color: #F5F5F5;
         }
 
         h1 {
             text-align: center;
+            /* background-color: bisque; */
+
         }
+        
+        .slider {
+            display: flex;
+            width: 100%;
+            /* background-color: brown; */
+            padding-left: 10px;
+            align-items: center;
+            
+        }
+
+        #nums {
+            display: flex;
+            width: 8%;
+            height: 100%;
+            /* background-color: green; */
+
+
+        }
+
+
+        h3 {
+            /* background-color: aqua; */
+        }
+
+
     </style>
 </head>
 
 <body>
     <div id="container">
+
         <div id="map"></div>
+
         <div id="sidebar">
-            <h1> Side bar </h1>
+            <h1> Navigation </h1>
+            <h3> Rating (0 - 5) </h3>
+            <div class="slider">
+                <div id="nums"> 
+                    <div id='rangeValue'> 0 </div>
+                    <div>+</div>
+                </div>
+
+                <input id='yelpRating' type="range" min="0" max="5" step="0.5" value="0" oninput="rangeValue.innerText = this.value" onchange="callback(this.value)">
+            </div>
         </div>
 
 
@@ -56,6 +94,16 @@
     <script type="text/javascript" src="yelp.json"></script> 
 
     <script >
+        function callback(rating) {
+            dots.each(function(d, i) {
+                let boolean = +d.rating >= +rating;
+                console.log('bool', boolean)
+                d3.select(this)
+                    .style('visibility', boolean ? 'visible' : 'hidden');
+            });
+
+
+        }
         
         var yelpJSON = dataJSON;
         mapboxgl.accessToken = 'pk.eyJ1IjoiaXR6cGVyZXoiLCJhIjoiY2xlOWltdXFvMDlnNDNxbzl6OHZ6NTluZiJ9.5cksE822_kLgE2-Qjaf0YA';
@@ -81,6 +129,8 @@
             .attr("height", "100%")
             .style("position", "absolute")
             .style("z-index", 2);
+
+
                 
         function project(d) {
             return map.project(new mapboxgl.LngLat(d[0], d[1]));
@@ -92,6 +142,7 @@
             .enter()
             .append("circle")
             .attr("r", 3)
+ 
             .style("fill", "gray") //can add criteria here 
             .on("mouseover", function (event, d) {
                 svg.select("#tooltip-text")
@@ -121,15 +172,11 @@
                 .attr("font-weight", "bold")
                 .attr("fill", "black");
             
-            
-      
-
         
 
         function render() {
             dots
                 .attr("cx", function (d) {
-                    console.log('dataBytes1 ->>>>', d);
                   return project(d.coordinates).x;
                 })
                 .attr("cy", function (d) {
@@ -142,30 +189,6 @@
         map.on("move", render);
         map.on("moveend", render);
         render(); 
-
-
-
-        
-
-        // map.on('load', () => {
-        //     // map.setFog({});
-
-        //     map.addSource('testData', {
-        //         type: 'geojson',
-        //         data: 'test.geojson'
-        //     });
-
-        //     map.addLayer({
-        //         id: 'testDataID',
-        //         type: 'fill', 
-        //         source: 'testData',
-        //         paint: {
-                    
-        //         }
-
-        //     });
-
-        // });
 
         
     </script>
