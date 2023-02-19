@@ -1,34 +1,220 @@
 <!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <link rel="stylesheet" href="style.css">
-        <title>Document</title>
-    </head>
+<html>
 
+<head>
+    <meta charset="utf-8">
+    <title> CS448B Assignment 3 </title>
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.12.0/mapbox-gl.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.12.0/mapbox-gl.js"></script>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+        }
 
+        #map {
+            width: 100%;
+            height: 100%;
+            flex-grow: 1;
+            margin-right: 20px;
+            z-index: 0;
+            position: relative;
+        }
 
+        #container {
+            display: flex;
+            height: 100%;
+        }
 
-    <body>
-        <div id="top">
-            <h1 id="wy"> test </h1>
+        #sidebar {
+            width: 30%;
+            height: 100%;
+            flex-shrink: 0;
+            background-color: pink;
+        }
+
+        h1 {
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="container">
+        <div id="map"></div>
+        <div id="sidebar">
+            <h1> Side bar </h1>
         </div>
 
-        <div id="map">
-            <svg width="800px" height="800px">
-                <g class="bayoutline" />
 
-                <g transform="translate(100,100)">
-                    <circle r="30" fill="darkgray" /> 
-                </g>
+    </div>
 
-                <g class="shops" /> 
 
-            </svg>
-        </div>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/d3/6.2.0/d3.min.js'></script>
 
-        <script src='https://cdnjs.cloudflare.com/ajax/libs/d3/6.2.0/d3.min.js'></script><script  src="./script.js"></script>
-    </body>
+    <script >
+
+        d3.select('p')
+            .text('update');
+
+
+
+        mapboxgl.accessToken = 'pk.eyJ1IjoiaXR6cGVyZXoiLCJhIjoiY2xlOWltdXFvMDlnNDNxbzl6OHZ6NTluZiJ9.5cksE822_kLgE2-Qjaf0YA';
+        const map = new mapboxgl.Map({
+            container: 'map', // container ID
+            // Choose from Mapbox's core styles, or make your own style with Mapbox Studio
+            style: 'mapbox://styles/mapbox/streets-v12', // style URL
+            center: [-122.148688, 37.603881], // starting position [lng, lat]
+            zoom: 9, // starting zoom
+            // pitch: 45,
+            // maxBounds: [
+            //     [-122.8, 36.8],
+            //     [-121.8, 38.3]
+            // ] // restrict the view to a certain area (southwest and northeast coords)
+
+        });
+
+        var container = map.getCanvasContainer();
+        var svg = d3
+            .select(container)
+            .append("svg")
+            .attr("width", "100%")
+            .attr("height", "100%")
+            .style("position", "absolute")
+            .style("z-index", 2);
+                
+        function project(d) {
+            return map.project(new mapboxgl.LngLat(d[0], d[1]));
+        }
+
+
+
+        // var dataBytes = [37.4292654112971, -122.173590660095];
+        var dummyData = [
+            {
+                name: 'T4',
+                reviews: 5,
+                coordinates: [-122.11938801965059, 37.418950548214895]
+            },
+            {
+                name: 'Teaspoon',
+                reviews: 3,
+                coordinates: [-122.14203970455065, 37.418950548214895]
+            },
+            
+        ]
+
+        var dots = svg
+            .selectAll("circle")
+            .data(dummyData)
+            .enter()
+            .append("circle")
+            .attr("r", 5)
+            .style("fill", "gray") //can add criteria here 
+            .on("mouseover", function (event, d) {
+                svg.select("#tooltip-text")
+                  .text(d.name);
+                let positionOffest = 8;
+                svg.select("#tooltip")
+                    // move the tooltip to where the cursor is
+                    .attr("transform", `translate(${project(d.coordinates).x + positionOffest}, ${project(d.coordinates).y + positionOffest})`) 
+                    .style("display", "block"); // make tooltip visible
+                    d3.select(this)
+                        .attr("stroke", "#333333")
+                        .attr("stroke-width", 2);
+            })
+            .on("mouseout", function (event, d) {
+                svg.select("#tooltip").style("display", "none"); // hide tooltip
+                d3.select(this).attr("stroke", "none");  // undo the stroke
+            });
+
+        const tooltipGroup = svg.append("g")  // the tooltip needs to be added last so that it stays on top of all circles
+            .attr("id", "tooltip")
+            .style("display", "none") // hidden by default
+            .append("text")
+                .attr("id", "tooltip-text")
+                .attr("x", 5)
+                .attr("y", 15)
+                .attr("font-size", "14px")
+                .attr("font-weight", "bold")
+                .attr("fill", "black");
+            
+            
+      
+
+        
+
+        function render() {
+            dots
+                .attr("cx", function (d) {
+                    console.log('dataBytes1 ->>>>', d);
+                  return project(d.coordinates).x;
+                })
+                .attr("cy", function (d) {
+                 return project(d.coordinates).y;
+                })
+                // .attr("r", Math.max(map.getZoom()**2/25, 3));
+        }
+
+        map.on("viewreset", render);
+        map.on("move", render);
+        map.on("moveend", render);
+        render(); 
+
+        // d3.csv("yelp.csv")
+        //     .then(function(shopData) {
+        //         let parsedData = []
+        //         shopData.map((elem) => {
+        //         let o = {}
+        //         o['name'] = elem.name;
+        //         o['rating'] = elem.rating;
+
+        //         let coordinateString = elem.coordinates;
+        //         coordinateString = coordinateString.split(',');
+        //         lngLat = []
+        //         for (let i = 1; i >= 0; i--) {
+        //             lngLat.push(+coordinateString[i]);
+    
+        //         }
+        //         o['coordinates'] = lngLat;
+
+        //         parsedData.push(o);
+        //         });
+        //         yelpData = parsedData;
+        //         console.log(yelpData);
+
+        // });
+
+
+        var yelpData;
+
+
+
+        // map.on('load', () => {
+        //     // map.setFog({});
+
+        //     map.addSource('testData', {
+        //         type: 'geojson',
+        //         data: 'test.geojson'
+        //     });
+
+        //     map.addLayer({
+        //         id: 'testDataID',
+        //         type: 'fill', 
+        //         source: 'testData',
+        //         paint: {
+                    
+        //         }
+
+        //     });
+
+        // });
+
+        
+    </script>
+
+</body>
+
 </html>
