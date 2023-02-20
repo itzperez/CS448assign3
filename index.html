@@ -37,8 +37,6 @@
 
         h1 {
             text-align: center;
-            /* background-color: bisque; */
-
         }
         
         .slider {
@@ -49,19 +47,22 @@
             align-items: center;
             
         }
+        
 
         #nums {
             display: flex;
             width: 8%;
             height: 100%;
-            /* background-color: green; */
-
 
         }
 
 
         h3 {
-            /* background-color: aqua; */
+            margin-left: 9px;
+        }
+
+        #circleAdjust {
+            margin-top: 60px;
         }
 
 
@@ -75,14 +76,28 @@
 
         <div id="sidebar">
             <h1> Navigation </h1>
-            <h3> Rating (0 - 5) </h3>
+
+            <div id="ratingStar" style="width: 100%; display: flex">
+                <h3 > Rating 0 - 5 </h3>
+                <img src="star.png" height="14px" width="20px" style="align-self: center; margin-left: 2px"/>
+            </div>
+            
+
             <div class="slider">
                 <div id="nums"> 
                     <div id='rangeValue'> 0 </div>
                     <div>+</div>
                 </div>
-
                 <input id='yelpRating' type="range" min="0" max="5" step="0.5" value="0" oninput="rangeValue.innerText = this.value" onchange="callback(this.value)">
+            </div>
+
+            <h3 id="circleAdjust"> Cricle adjuster </h3>
+            <div class="slider">
+                <div id="nums"> 
+                    <div id='rValue'> 60 </div>
+                </div>
+                <input id='radiusValue' type="range" min="10" max="100" step="5" value="60" oninput="rValue.innerText = this.value" onchange="callback2(this.value)">
+         
             </div>
         </div>
 
@@ -94,18 +109,8 @@
     <script type="text/javascript" src="yelp.json"></script> 
 
     <script >
-        function callback(rating) {
-            dots.each(function(d, i) {
-                let boolean = +d.rating >= +rating;
-                console.log('bool', boolean)
-                d3.select(this)
-                    .style('visibility', boolean ? 'visible' : 'hidden');
-            });
-
-
-        }
-        
         var yelpJSON = dataJSON;
+
         mapboxgl.accessToken = 'pk.eyJ1IjoiaXR6cGVyZXoiLCJhIjoiY2xlOWltdXFvMDlnNDNxbzl6OHZ6NTluZiJ9.5cksE822_kLgE2-Qjaf0YA';
         const map = new mapboxgl.Map({
             container: 'map', // container ID
@@ -113,15 +118,10 @@
             style: 'mapbox://styles/mapbox/streets-v12', // style URL
             center: [-122.148688, 37.603881], // starting position [lng, lat]
             zoom: 9, // starting zoom
-            // pitch: 45,
-            // maxBounds: [
-            //     [-122.8, 36.8],
-            //     [-121.8, 38.3]
-            // ] // restrict the view to a certain area (southwest and northeast coords)
-
         });
-
         var container = map.getCanvasContainer();
+
+
         var svg = d3
             .select(container)
             .append("svg")
@@ -131,22 +131,40 @@
             .style("z-index", 2);
 
 
-                
-        function project(d) {
-            return map.project(new mapboxgl.LngLat(d[0], d[1]));
-        }
+        svg.append('g')
+            .attr('id', 'interestCircles');
 
-        var dots = svg
+        svg.append('g')
+            .attr('id', 'dots');
+
+        svg.append("g")  // the tooltip needs to be added last so that it stays on top of all circles
+            .attr("id", "tooltip")
+            .style("display", "none") // hidden by default
+
+
+
+        d3.select('#tooltip')
+            .append("text")
+                .attr("id", "storeName")
+                .attr("x", 5)
+                .attr("y", 15)
+                .attr("font-size", "14px")
+                .attr("font-weight", "bold")
+                .attr("fill", "black");
+
+        var dots = d3.select('#dots')
             .selectAll("circle")
             .data(yelpJSON)
             .enter()
             .append("circle")
             .attr("r", 3)
- 
             .style("fill", "gray") //can add criteria here 
             .on("mouseover", function (event, d) {
-                svg.select("#tooltip-text")
-                  .text(d.name);
+                d3.select("#storeName")
+                  .text(d.name)
+                // d3.select('#storeRating')
+                //     .text(d.rating)
+
                 let positionOffest = 8;
                 svg.select("#tooltip")
                     // move the tooltip to where the cursor is
@@ -161,19 +179,109 @@
                 d3.select(this).attr("stroke", "none");  // undo the stroke
             });
 
-        const tooltipGroup = svg.append("g")  // the tooltip needs to be added last so that it stays on top of all circles
-            .attr("id", "tooltip")
-            .style("display", "none") // hidden by default
-            .append("text")
-                .attr("id", "tooltip-text")
-                .attr("x", 5)
-                .attr("y", 15)
-                .attr("font-size", "14px")
-                .attr("font-weight", "bold")
-                .attr("fill", "black");
+
+        /* Draggable circles */
+        
+        let circles = [];
+
+        let drag = d3.drag()
+        //   .on('drag', handleDrag)
+          .on('start', dragBegin)
+          .on('drag', dragging)
+          .on('end', dragFinish)
+
+
+        function intersection(x, y) {
+            const circleAdistance = 
+                Math.sqrt(Math.pow((x - d3.select("#circle0").attr("cx")),2) + Math.pow((y - d3.select("#circle0").attr("cy")),2));
+            const circleBdistance = 
+                Math.sqrt(Math.pow((x - d3.select("#circle1").attr("cx")),2) + Math.pow((y - d3.select("#circle1").attr("cy")),2));
+            return circleAdistance <= d3.select("#circle0").attr("r") && circleBdistance <= d3.select("#circle1").attr("r")
+        }
+        
+        function dragBegin(e, d) {
+            d3.select(this).raise().attr("stroke", "orange");
+            d3.select(this).raise().attr("stroke-width", "3px");
+            
+        }
+
+        function dragFinish(e, d) {
+            d3.select(this).attr("stroke", null);
+            d3.select('#dots').selectAll("circle").style("fill", d => intersection(project(d.coordinates).x, project(d.coordinates).y) ? "orange" : "gray")
+           d3.select('#dots').selectAll("circle").attr("r", d => intersection(project(d.coordinates).x, project(d.coordinates).y) ? 4 : 3);
+        }
+
+        function dragging(e, d) {
+            d3.select(this).attr("cx", d.x = e.x).attr("cy", d.y = e.y);
+        }
+
+        function handleDrag(e) {
+            e.subject.x = e.x;
+            e.subject.y = e.y;
+            update();
+        }
+
+        function initDrag() {
+            d3.select('#interestCircles')
+                .selectAll('circle')
+                .call(drag);
+        }
+
+        function updateData() {
+            circles = [];
+            for(let i = 0; i < 2; i++) {
+                circles.push({
+                    id: i,
+                    x: Math.random() * 800,
+                    y: Math.random() * 800
+                });
+            }
+        }
+
+        function update() {
+            d3.select('#interestCircles')
+                .selectAll('circle')
+                .data(circles)
+                .join('circle')
+                .attr('id', function (d) {
+                    return 'circle' + d.id.toString();
+                })
+                .attr('cx', function(d) { return d.x; })
+
+                .attr('cy', function(d) { return d.y; })
+                .attr('r', 60)
+                .attr('fill', 'gray') // shouldn't this be .style
+                .attr('fill-opacity', '0.5');
+            }
+
+        updateData();
+        update();
+        initDrag();
+
+
+        /* ---------------------- */
+
+
+        function project(d) {
+            return map.project(new mapboxgl.LngLat(d[0], d[1]));
+        }
+
+        function callback(rating) {
+            dots.each(function(d, i) {
+                let boolean = +d.rating >= +rating;
+                console.log('bool', boolean)
+                d3.select(this)
+                    .style('visibility', boolean ? 'visible' : 'hidden');
+            });
+        }
+
+        function callback2(radius) {
+            d3.select('#interestCircles')
+                .selectAll('circle')
+                .attr('r', radius);
+        }
             
         
-
         function render() {
             dots
                 .attr("cx", function (d) {
@@ -196,3 +304,4 @@
 </body>
 
 </html>
+
